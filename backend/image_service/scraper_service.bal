@@ -45,9 +45,9 @@ service /api on new http:Listener(9090) {
     resource function post download(@http:Payload DownloadRequest req)
             returns http:Response|http:InternalServerError {
 
-        log:printInfo("Download request", count = req.imageUrls.length(), format = req.format);
+        log:printInfo("Download request", count = req.imageUrls.length());
 
-        byte[]|error zipBytes = buildZip(req.imageUrls, req.format);
+        byte[]|error zipBytes = buildZip(req.imageUrls);
 
         if zipBytes is error {
             log:printError("ZIP build failed", 'error = zipBytes);
@@ -67,8 +67,7 @@ service /api on new http:Listener(9090) {
 
 // ─── ZIP Builder ─────────────────────────────────────────────────────────────
 
-function buildZip(string[] urls, string format) returns byte[]|error {
-    // Collect all (filename, bytes) pairs
+function buildZip(string[] urls) returns byte[]|error {
     map<byte[]> files = {};
     int counter = 1;
 
@@ -80,14 +79,24 @@ function buildZip(string[] urls, string format) returns byte[]|error {
             continue;
         }
 
-        byte[]|error converted = convertImageFormat(rawBytes, format);
-        if converted is error {
-            log:printWarn("Conversion failed, using original", url = url, reason = converted.message());
-            // fallback: store original bytes
-            files[string `image_${counter}.${format}`] = rawBytes;
-        } else {
-            files[string `image_${counter}.${format}`] = converted;
+        // Derive extension from URL (strip query params and fragment)
+        int endIdx = url.length();
+        int? qIdx = url.indexOf("?");
+        int? hIdx = url.indexOf("#");
+        if qIdx is int { endIdx = qIdx; }
+        if hIdx is int && hIdx < endIdx { endIdx = hIdx; }
+        string cleanUrl = url.substring(0, endIdx);
+
+        string ext = "jpg";
+        int? dotIdx = cleanUrl.lastIndexOf(".");
+        if dotIdx is int {
+            string candidate = cleanUrl.substring(dotIdx + 1).toLowerAscii();
+            if candidate == "png" || candidate == "jpg" || candidate == "jpeg" || candidate == "webp" || candidate == "gif" {
+                ext = candidate;
+            }
         }
+
+        files[string `image_${counter}.${ext}`] = rawBytes;
         counter += 1;
     }
 
@@ -129,6 +138,6 @@ function buildZipViaJava(map<byte[]> files) returns byte[]|error {
 // Java method binding for ZIP utility
 function zipFiles(string[] names, byte[][] contents) returns byte[]|error = @java:Method {
     name: "createZip",
-    'class: "org.imgharvest.ImageConverter",
+    'class: "org.imgharvest.ZipCreator",
     paramTypes: ["[Ljava.lang.String;", "[[B"]
 } external;

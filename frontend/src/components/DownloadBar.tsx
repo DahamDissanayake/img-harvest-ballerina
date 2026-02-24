@@ -5,7 +5,6 @@ import { Download, Package, Loader2, AlertCircle } from "lucide-react";
 interface Props {
     selectedCount: number;
     totalCount: number;
-    format: string;
     onDownload: () => void;
     downloading: boolean;
     downloadError: string | null;
@@ -14,7 +13,6 @@ interface Props {
 export default function DownloadBar({
     selectedCount,
     totalCount,
-    format,
     onDownload,
     downloading,
     downloadError,
@@ -40,27 +38,11 @@ export default function DownloadBar({
             }}
         >
             {/* Left: stats */}
-            <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                    <Package size={16} color="var(--brand)" />
-                    <span style={{ fontSize: "0.9rem", color: "var(--text-primary)", fontWeight: 600 }}>
-                        {selectedCount} / {totalCount} images selected
-                    </span>
-                </div>
-                <div
-                    style={{
-                        background: "rgba(99,102,241,0.1)",
-                        border: "1px solid rgba(99,102,241,0.2)",
-                        borderRadius: "6px",
-                        padding: "3px 10px",
-                        fontSize: "0.75rem",
-                        color: "var(--brand)",
-                        fontWeight: 700,
-                        textTransform: "uppercase",
-                    }}
-                >
-                    .{format}
-                </div>
+            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                <Package size={16} color="var(--brand)" />
+                <span style={{ fontSize: "0.9rem", color: "var(--text-primary)", fontWeight: 600 }}>
+                    {selectedCount} / {totalCount} images selected
+                </span>
             </div>
 
             {/* Right: download button + error */}

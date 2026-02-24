@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import SearchForm, { SearchFormValues, ImageFormat } from "@/components/SearchForm";
+import SearchForm, { SearchFormValues } from "@/components/SearchForm";
 import ImageGallery, { ImageResult } from "@/components/ImageGallery";
 import DownloadBar from "@/components/DownloadBar";
 import { useSession } from "@/contexts/SessionContext";
@@ -12,7 +12,7 @@ export default function Home() {
 
     const [images, setImages] = useState<ImageResult[]>([]);
     const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-    const [currentFormat, setCurrentFormat] = useState<ImageFormat>("png");
+
     const [currentKeyword, setCurrentKeyword] = useState("");
 
     const [searching, setSearching] = useState(false);
@@ -23,7 +23,7 @@ export default function Home() {
 
     // ── Search ────────────────────────────────────────────────────────────────
     const handleSearch = useCallback(
-        async ({ keyword, count, format }: SearchFormValues) => {
+        async ({ keyword, count }: SearchFormValues) => {
             if (!sessionEmail) {
                 setSearchError("Please set a session email in the header first.");
                 return;
@@ -32,14 +32,13 @@ export default function Home() {
             setSearchError(null);
             setImages([]);
             setSelectedIds(new Set());
-            setCurrentFormat(format);
             setCurrentKeyword(keyword);
 
             try {
                 const res = await fetch("/api/search", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ keyword, count, format, sessionEmail }),
+                    body: JSON.stringify({ keyword, count, sessionEmail }),
                 });
                 const data = await res.json();
 
@@ -88,7 +87,7 @@ export default function Home() {
             const res = await fetch("/api/download", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ sessionEmail, format: currentFormat, imageUrls: selectedUrls }),
+                body: JSON.stringify({ sessionEmail, imageUrls: selectedUrls }),
             });
 
             if (!res.ok) {
@@ -101,7 +100,7 @@ export default function Home() {
             const url = URL.createObjectURL(blob);
             const a = document.createElement("a");
             a.href = url;
-            a.download = `dataset_${currentKeyword.replace(/\s+/g, "_")}_${currentFormat}.zip`;
+            a.download = `dataset_${currentKeyword.replace(/\s+/g, "_")}.zip`;
             a.click();
             URL.revokeObjectURL(url);
         } catch (err: unknown) {
@@ -109,7 +108,7 @@ export default function Home() {
         } finally {
             setDownloading(false);
         }
-    }, [images, selectedIds, sessionEmail, currentFormat, currentKeyword]);
+    }, [images, selectedIds, sessionEmail, currentKeyword]);
 
     // ── Render ────────────────────────────────────────────────────────────────
     return (
@@ -235,7 +234,6 @@ export default function Home() {
             <DownloadBar
                 selectedCount={selectedIds.size}
                 totalCount={images.length}
-                format={currentFormat}
                 onDownload={handleDownload}
                 downloading={downloading}
                 downloadError={downloadError}

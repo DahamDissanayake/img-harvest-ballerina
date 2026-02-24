@@ -4,35 +4,29 @@
 
 ## Stack
 
-- **Frontend**: Next.js 14 (App Router) + Tailwind CSS + Lucide-React → `http://localhost:3000`
-- **Backend**: Ballerina Swan Lake → `http://localhost:9090`
+- **Frontend**: Next.js 15 (App Router) + Tailwind CSS + Lucide-React → `http://localhost:3000`
+- **Backend**: Python FastAPI + Pillow → `http://localhost:8000`
 - **Image Source**: SerpApi (Google Images engine)
-- **Conversion**: Java Interop (ImageIO + TwelveMonkeys WebP)
+- **Conversion**: Pillow (PNG / JPG / WebP)
 
 ## Quick Start
 
-### 1. Build the Java converter (once)
+### 1. Start the Python backend
 
-```bat
-cd backend/image_service
-build_java.bat        # downloads TwelveMonkeys JARs, compiles, packages JAR
+```bash
+cd backend
+pip install -r requirements.txt
+cp .env.example .env          # then add your SERPAPI_KEY
+uvicorn main:app --reload --port 8000
 ```
 
-### 2. Start the Ballerina backend
+Service starts on `http://localhost:8000`
 
-```bat
-set SERPAPI_KEY=your_serpapi_api_key_here
-cd backend/image_service
-bal run
-```
+### 2. Start the Next.js frontend
 
-Service starts on `http://localhost:9090`
-
-### 3. Start the Next.js frontend
-
-```bat
+```bash
 cd frontend
-npm install           # first time only
+npm install                   # first time only
 npm run dev
 ```
 
@@ -42,7 +36,7 @@ App opens at `http://localhost:3000`
 
 - 🔍 **Search & Scrape** — powered by SerpApi Google Images
 - 🖼 **Review Gallery** — checkbox-select or deselect individual images
-- 🔄 **Format Conversion** — PNG / JPG / WebP via Java ImageIO
+- 🔄 **Format Conversion** — PNG / JPG / WebP via Pillow
 - 📦 **ZIP Download** — all selected images packaged server-side
 - 👤 **Session Context** — email-tagged sessions persisted in localStorage
 
@@ -50,22 +44,19 @@ App opens at `http://localhost:3000`
 
 ```
 img-harvest/
-├── backend/image_service/
-│   ├── scraper_service.bal    ← Main HTTP service (search + download)
-│   ├── serpapi_client.bal     ← SerpApi integration
-│   ├── image_processor.bal    ← Java Interop bridge
-│   ├── types.bal              ← Shared record types
-│   ├── libs/ImageConverter.java
-│   └── build_java.bat
+├── backend/
+│   ├── main.py               ← FastAPI app (search + download endpoints)
+│   ├── requirements.txt
+│   └── .env.example
 └── frontend/
-    ├── src/app/               ← Next.js App Router pages + API routes
-    ├── src/components/        ← Header, SearchForm, ImageGallery, DownloadBar
-    └── src/contexts/          ← SessionContext
+    ├── src/app/              ← Next.js App Router pages + API routes
+    ├── src/components/       ← Header, SearchForm, ImageGallery, DownloadBar
+    └── src/contexts/         ← SessionContext
 ```
 
 ## Environment Variables
 
 | Variable      | Where                 | Description                                              |
 | ------------- | --------------------- | -------------------------------------------------------- |
-| `SERPAPI_KEY` | Backend (env var)     | Your SerpApi key                                         |
-| `BACKEND_URL` | `frontend/.env.local` | Ballerina service URL (default: `http://localhost:9090`) |
+| `SERPAPI_KEY` | `backend/.env`        | Your SerpApi key from [serpapi.com](https://serpapi.com) |
+| `BACKEND_URL` | `frontend/.env.local` | FastAPI service URL (default: `http://localhost:8000`)   |
