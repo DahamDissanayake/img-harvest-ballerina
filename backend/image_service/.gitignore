@@ -1,11 +1,53 @@
-# Ballerina generates this directory during the compilation of a package.
-# It contains compiler-generated artifacts and the final executable if this is an application package.
+# ===========================
+# Ballerina Build Artifacts
+# ===========================
+# Generated during compilation; contains compiled artifacts and the executable.
 target/
 
-# Ballerina maintains the compiler-generated source code here.
-# Remove this if you want to commit generated sources.
+# Compiler-generated source code — remove this line if you want to commit generated sources.
 generated/
 
-# Contains configuration values used during development time.
-# See https://ballerina.io/learn/provide-values-to-configurable-variables/ for more details.
+# ===========================
+# Secrets & Configuration
+# ===========================
+# Runtime config values (API keys, DB passwords, etc.) — never commit this.
+# See https://ballerina.io/learn/provide-values-to-configurable-variables/
 Config.toml
+
+# Generic env files
+.env
+.env.local
+.env.*
+
+# ===========================
+# Java / JAR Dependencies
+# ===========================
+# Ignore locally built or downloaded JARs in the libs folder.
+# Commit only the JARs that are truly part of the repo (remove this line if needed).
+libs/*.jar
+
+# ===========================
+# IDE & Editor
+# ===========================
+.vscode/
+.idea/
+*.iml
+*.iws
+*.ipr
+
+# ===========================
+# Dev Container
+# ===========================
+.devcontainer.json
+
+# ===========================
+# OS Artifacts
+# ===========================
+.DS_Store
+Thumbs.db
+*.log
+
+# ===========================
+# Test Artifacts
+# ===========================
+tests/target/

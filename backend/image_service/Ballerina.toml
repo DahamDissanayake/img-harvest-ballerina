@@ -1,8 +1,21 @@
 [package]
-org = "user"
+org = "imgharvest"
 name = "image_service"
 version = "0.1.0"
 distribution = "2201.13.1"
 
 [build-options]
-observabilityIncluded = true
+observabilityIncluded = false
+
+[[platform.java17.dependency]]
+path = "libs/image-converter.jar"
+
+[[platform.java17.dependency]]
+groupId = "com.twelvemonkeys.imageio"
+artifactId = "imageio-core"
+version = "3.10.1"
+
+[[platform.java17.dependency]]
+groupId = "com.twelvemonkeys.imageio"
+artifactId = "imageio-webp"
+version = "3.10.1"
