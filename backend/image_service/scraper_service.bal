@@ -4,9 +4,8 @@
 //   POST /api/download → download, convert, and ZIP selected images
 
 import ballerina/http;
+import ballerina/jballerina.java;
 import ballerina/log;
-import ballerina/io;
-import ballerina/mime;
 
 // ─── HTTP Service ────────────────────────────────────────────────────────────
 
@@ -47,10 +46,6 @@ service /api on new http:Listener(9090) {
             returns http:Response|http:InternalServerError {
 
         log:printInfo("Download request", count = req.imageUrls.length(), format = req.format);
-
-        // Create HTTP client for downloading images
-        http:Client|error imgClient = new ("https://placeholder.invalid");
-        // We'll use separate clients per URL inside the helper
 
         byte[]|error zipBytes = buildZip(req.imageUrls, req.format);
 
@@ -105,9 +100,9 @@ function buildZip(string[] urls, string format) returns byte[]|error {
 
 // Fetch raw bytes from a URL using Ballerina HTTP client
 function fetchImageBytes(string url) returns byte[]|error {
-    // Parse scheme and host from URL and create a targeted client
-    http:Client client = check new (url);
-    http:Response resp = check client->get("/");
+    // Use the full URL as the client base; empty path means fetch base URL as-is
+    http:Client imgClient = check new(url);
+    http:Response resp = check imgClient->get("");
     if resp.statusCode != 200 {
         return error(string `HTTP ${resp.statusCode} for ${url}`);
     }
@@ -125,7 +120,8 @@ function buildZipViaJava(map<byte[]> files) returns byte[]|error {
     string[] names = files.keys();
     byte[][] contentArrays = [];
     foreach string name in names {
-        contentArrays.push(files.get(name) ?: []);
+        byte[]? item = files[name];
+        contentArrays.push(item is byte[] ? item : []);
     }
     return zipFiles(names, contentArrays);
 }

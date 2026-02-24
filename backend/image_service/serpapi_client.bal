@@ -3,7 +3,6 @@
 import ballerina/http;
 import ballerina/log;
 import ballerina/os;
-import ballerina/lang.array;
 
 configurable string serpApiKey = os:getEnv("SERPAPI_KEY");
 
