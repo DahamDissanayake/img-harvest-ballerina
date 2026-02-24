@@ -138,6 +138,6 @@ function buildZipViaJava(map<byte[]> files) returns byte[]|error {
 // Java method binding for ZIP utility
 function zipFiles(string[] names, byte[][] contents) returns byte[]|error = @java:Method {
     name: "createZip",
-    'class: "org.imgharvest.ZipCreator",
+    'class: "backend.image_service.libs.ZipCreator",
     paramTypes: ["[Ljava.lang.String;", "[[B"]
 } external;

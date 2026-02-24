@@ -1,4 +1,4 @@
-package org.imgharvest;
+package backend.image_service.libs;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
