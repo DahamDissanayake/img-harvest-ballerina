@@ -42,8 +42,8 @@ public function searchImages(string keyword, int count, string sessionEmail) ret
 
         results.push({
             id: string `${sessionEmail}-${idx}`,
-            url: imgUrl is string ? imgUrl : "",
-            thumbnail: thumb is string ? thumb : "",
+            url: imgUrl,
+            thumbnail: thumb,
             title: title is string ? title : "Untitled",
             width: (),
             height: ()

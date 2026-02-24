@@ -53,10 +53,11 @@ exit /b 1
 :found_java
 
 REM ── Compile ──────────────────────────────────────────────────────────────────
-echo [ImgHarvest] Compiling ZipCreator.java...
-if not exist "out\classes" mkdir out\classes
+echo [ImgHarvest] Cleaning and compiling ZipCreator.java...
+if exist "out" rmdir /s /q "out"
+mkdir "out"
 
-"%JAVAC_EXE%" -d out\classes libs\ZipCreator.java
+"%JAVAC_EXE%" -d out libs\ZipCreator.java
 
 if %errorlevel% neq 0 (
     echo [ERROR] Compilation failed!
@@ -65,7 +66,7 @@ if %errorlevel% neq 0 (
 
 REM ── Package ──────────────────────────────────────────────────────────────────
 echo [ImgHarvest] Packaging JAR...
-"%JAR_EXE%" cf libs\zip-creator.jar -C out\classes .
+"%JAR_EXE%" cf libs\zip-creator.jar -C out .
 
 if %errorlevel% neq 0 (
     echo [ERROR] JAR packaging failed!
