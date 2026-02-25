@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { SessionProvider } from "@/contexts/SessionContext";
 import Header from "@/components/Header";
+import Footer from "@/components/Footer";
 
 export const metadata: Metadata = {
     title: "ImgHarvest — Image Scraper & ML Data Prep",
@@ -21,6 +22,7 @@ export default function RootLayout({
                     <div className="min-h-screen flex flex-col">
                         <Header />
                         <main className="flex-1">{children}</main>
+                        <Footer />
                     </div>
                 </SessionProvider>
             </body>

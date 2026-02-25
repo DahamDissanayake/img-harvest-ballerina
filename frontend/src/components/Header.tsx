@@ -32,7 +32,7 @@ export default function Header() {
     return (
         <header
             style={{
-                background: "rgba(15,15,19,0.9)",
+                background: "rgba(23,23,23,0.95)",
                 backdropFilter: "blur(20px)",
                 borderBottom: "1px solid var(--border)",
                 position: "sticky",
@@ -46,26 +46,12 @@ export default function Header() {
             >
                 {/* Logo */}
                 <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                    <div
-                        style={{
-                            width: "36px",
-                            height: "36px",
-                            borderRadius: "10px",
-                            background: "linear-gradient(135deg, #6366f1, #8b5cf6)",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            boxShadow: "0 0 16px rgba(99,102,241,0.4)",
-                        }}
-                    >
-                        <Database size={18} color="white" />
-                    </div>
                     <div>
-                        <div style={{ fontWeight: 800, fontSize: "1.1rem", letterSpacing: "-0.02em", color: "var(--text-primary)" }}>
+                        <div style={{ fontWeight: 800, fontSize: "1.1rem", letterSpacing: "-0.02em", color: "var(--accent)" }}>
                             ImgHarvest
                         </div>
                         <div style={{ fontSize: "0.65rem", color: "var(--text-muted)", letterSpacing: "0.08em", textTransform: "uppercase" }}>
-                            ML Image Harvester
+                            Image Harvester for Datasets
                         </div>
                     </div>
                 </div>
@@ -88,11 +74,11 @@ export default function Header() {
                                 <button
                                     onClick={handleSave}
                                     style={{
-                                        background: "var(--brand)",
+                                        background: "var(--accent)",
                                         border: "none",
                                         borderRadius: "8px",
                                         padding: "6px 12px",
-                                        color: "white",
+                                        color: "#171717",
                                         cursor: "pointer",
                                         fontSize: "0.8rem",
                                         fontWeight: 600,
@@ -134,8 +120,8 @@ export default function Header() {
                                 display: "flex",
                                 alignItems: "center",
                                 gap: "6px",
-                                background: "rgba(99,102,241,0.1)",
-                                border: "1px solid rgba(99,102,241,0.3)",
+                                background: "var(--accent-glow)",
+                                border: "1px solid rgba(227,197,134,0.3)",
                                 borderRadius: "8px",
                                 padding: "6px 12px",
                                 cursor: "pointer",
@@ -143,27 +129,12 @@ export default function Header() {
                             onClick={() => { setEditing(true); setDraft(sessionEmail); }}
                             title="Click to change email"
                         >
-                            <CheckCircle size={13} color="var(--brand)" />
+                            <CheckCircle size={13} color="var(--accent)" />
                             <span style={{ fontSize: "0.82rem", color: "var(--text-primary)", fontWeight: 500 }}>
                                 {sessionEmail}
                             </span>
                         </div>
                     )}
-
-                    <div
-                        style={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: "4px",
-                            background: "rgba(34,197,94,0.1)",
-                            border: "1px solid rgba(34,197,94,0.2)",
-                            borderRadius: "6px",
-                            padding: "4px 8px",
-                        }}
-                    >
-                        <Zap size={11} color="#22c55e" />
-                        <span style={{ fontSize: "0.7rem", color: "#22c55e", fontWeight: 600 }}>LIVE</span>
-                    </div>
                 </div>
             </div>
         </header>

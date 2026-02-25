@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, memo, useCallback, useEffect, useRef } from "react";
 import { CheckSquare, Square, AlertTriangle, ExternalLink } from "lucide-react";
 
 export interface ImageResult {
@@ -20,7 +20,7 @@ interface Props {
     onDeselectAll: () => void;
 }
 
-function ImageCard({
+const ImageCard = memo(function ImageCard({
     image,
     selected,
     onToggle,
@@ -39,32 +39,33 @@ function ImageCard({
                 position: "relative",
                 borderRadius: "12px",
                 overflow: "hidden",
-                border: `2px solid ${selected ? "var(--brand)" : "var(--border)"}`,
+                border: `2px solid ${selected ? "var(--accent)" : "var(--border)"}`,
                 background: "var(--bg-card)",
                 cursor: "pointer",
-                transition: "all 0.15s ease",
-                boxShadow: selected ? "0 0 16px rgba(99,102,241,0.3)" : "none",
-                transform: selected ? "scale(1.01)" : "scale(1)",
+                transition: "border-color 0.15s ease, box-shadow 0.15s ease",
+                boxShadow: selected ? "0 0 14px rgba(227,197,134,0.25)" : "none",
             }}
         >
-            {/* Skeleton while loading */}
-            {!loaded && !imgError && (
-                <div className="skeleton" style={{ width: "100%", height: "180px" }} />
-            )}
-
             {/* Image */}
             {!imgError ? (
-                <div style={{ position: "relative", width: "100%", height: "180px" }}>
+                <div style={{ position: "relative", width: "100%", height: "180px", background: "var(--bg-elevated)" }}>
+                    {/* Skeleton overlay while loading */}
+                    {!loaded && (
+                        <div className="skeleton" style={{ position: "absolute", inset: 0, zIndex: 1 }} />
+                    )}
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                         src={image.thumbnail || image.url}
                         alt={image.title}
                         referrerPolicy="no-referrer"
+                        loading="lazy"
+                        decoding="async"
                         style={{
                             width: "100%",
                             height: "100%",
                             objectFit: "cover",
-                            display: loaded ? "block" : "none",
+                            opacity: loaded ? 1 : 0,
+                            transition: "opacity 0.2s ease",
                         }}
                         onLoad={() => setLoaded(true)}
                         onError={() => setImgError(true)}
@@ -96,7 +97,7 @@ function ImageCard({
                     position: "absolute",
                     top: "8px",
                     left: "8px",
-                    background: selected ? "var(--brand)" : "rgba(0,0,0,0.55)",
+                    background: selected ? "var(--accent)" : "rgba(0,0,0,0.55)",
                     borderRadius: "6px",
                     padding: "2px",
                     display: "flex",
@@ -106,7 +107,7 @@ function ImageCard({
                 }}
             >
                 {selected ? (
-                    <CheckSquare size={16} color="white" />
+                    <CheckSquare size={16} color="#171717" />
                 ) : (
                     <Square size={16} color="rgba(255,255,255,0.7)" />
                 )}
@@ -158,7 +159,10 @@ function ImageCard({
             </div>
         </div>
     );
-}
+});
+
+// Progressive rendering: load BATCH_SIZE images at a time
+const BATCH_SIZE = 50;
 
 export default function ImageGallery({
     images,
@@ -168,6 +172,42 @@ export default function ImageGallery({
     onDeselectAll,
 }: Props) {
     const allSelected = images.length > 0 && selectedIds.size === images.length;
+    const [visibleCount, setVisibleCount] = useState(BATCH_SIZE);
+    const sentinelRef = useRef<HTMLDivElement>(null);
+
+    // Reset visible count when images change (new search)
+    useEffect(() => {
+        setVisibleCount(BATCH_SIZE);
+    }, [images]);
+
+    // IntersectionObserver to load more images as user scrolls
+    useEffect(() => {
+        const sentinel = sentinelRef.current;
+        if (!sentinel) return;
+
+        const observer = new IntersectionObserver(
+            (entries) => {
+                if (entries[0].isIntersecting) {
+                    setVisibleCount((prev) => Math.min(prev + BATCH_SIZE, images.length));
+                }
+            },
+            { rootMargin: "400px" }
+        );
+
+        observer.observe(sentinel);
+        return () => observer.disconnect();
+    }, [images.length]);
+
+    const visibleImages = images.slice(0, visibleCount);
+    const hasMore = visibleCount < images.length;
+
+    // Stable toggle callback per image id
+    const handleToggle = useCallback(
+        (id: string) => {
+            onToggle(id);
+        },
+        [onToggle]
+    );
 
     return (
         <div>
@@ -186,8 +226,8 @@ export default function ImageGallery({
                     </span>
                     <span
                         style={{
-                            background: "rgba(99,102,241,0.15)",
-                            color: "var(--brand)",
+                            background: "var(--accent-glow)",
+                            color: "var(--accent)",
                             borderRadius: "6px",
                             padding: "2px 8px",
                             fontSize: "0.75rem",
@@ -199,6 +239,11 @@ export default function ImageGallery({
                     <span style={{ color: "var(--text-muted)", fontSize: "0.82rem" }}>
                         · {selectedIds.size} selected
                     </span>
+                    {hasMore && (
+                        <span style={{ color: "var(--text-muted)", fontSize: "0.75rem" }}>
+                            · showing {visibleCount} of {images.length}
+                        </span>
+                    )}
                 </div>
 
                 <div style={{ display: "flex", gap: "8px" }}>
@@ -232,15 +277,31 @@ export default function ImageGallery({
                     gap: "12px",
                 }}
             >
-                {images.map((img) => (
+                {visibleImages.map((img) => (
                     <ImageCard
                         key={img.id}
                         image={img}
                         selected={selectedIds.has(img.id)}
-                        onToggle={() => onToggle(img.id)}
+                        onToggle={() => handleToggle(img.id)}
                     />
                 ))}
             </div>
+
+            {/* Scroll sentinel for progressive loading */}
+            {hasMore && (
+                <div
+                    ref={sentinelRef}
+                    style={{
+                        display: "flex",
+                        justifyContent: "center",
+                        padding: "32px 0",
+                        color: "var(--text-muted)",
+                        fontSize: "0.82rem",
+                    }}
+                >
+                    Loading more images...
+                </div>
+            )}
         </div>
     );
 }

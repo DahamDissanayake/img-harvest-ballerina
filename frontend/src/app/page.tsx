@@ -74,6 +74,7 @@ export default function Home() {
                 if (!res.ok) throw new Error(data.error || "Search failed");
 
                 const results: ImageResult[] = data.images ?? [];
+                console.log("[Search] Got results:", results.length, "sample:", results[0]);
                 setImages(results);
                 // Select all by default
                 setSelectedIds(new Set(results.map((r) => r.id)));
@@ -119,9 +120,12 @@ export default function Home() {
         abortRef.current = abort;
 
         try {
-            // Phase 1: Download images in parallel (5 at a time)
+            // Stream images directly into ZIP to reduce peak memory
+            const zip = new JSZip();
             let completed = 0;
-            const downloadResults = await parallelMap(selectedUrls, 5, async (url, index) => {
+            let succeeded = 0;
+
+            await parallelMap(selectedUrls, 6, async (url, index) => {
                 if (abort.signal.aborted) throw new Error("Cancelled");
 
                 try {
@@ -130,11 +134,10 @@ export default function Home() {
 
                     if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
-                    const blob = await res.blob();
-                    completed++;
-                    setDownloadProgress({ phase: "downloading", current: completed, total });
+                    // Use arrayBuffer to avoid holding blob + buffer simultaneously
+                    const buffer = await res.arrayBuffer();
 
-                    // Derive file extension from content-type or URL
+                    // Derive file extension from content-type
                     const contentType = res.headers.get("content-type") || "";
                     let ext = "jpg";
                     if (contentType.includes("png")) ext = "png";
@@ -142,35 +145,29 @@ export default function Home() {
                     else if (contentType.includes("gif")) ext = "gif";
                     else if (contentType.includes("jpeg") || contentType.includes("jpg")) ext = "jpg";
 
-                    return {
-                        name: `image_${index + 1}.${ext}`,
-                        blob,
-                        ok: true as const,
-                    };
+                    // Add directly to ZIP — no intermediate array
+                    zip.file(`image_${index + 1}.${ext}`, buffer);
+                    succeeded++;
                 } catch {
-                    completed++;
-                    setDownloadProgress({ phase: "downloading", current: completed, total });
-                    return { name: "", blob: null, ok: false as const };
+                    // skip failed images
                 }
+
+                completed++;
+                setDownloadProgress({ phase: "downloading", current: completed, total });
             });
 
-            // Count successes
-            const good = downloadResults.filter((r) => r.ok);
-            if (good.length === 0) {
+            if (succeeded === 0) {
                 throw new Error("No images could be downloaded");
             }
 
             // Phase 2: Create ZIP
-            setDownloadProgress({ phase: "zipping", current: good.length, total: good.length });
+            setDownloadProgress({ phase: "zipping", current: succeeded, total: succeeded });
 
-            const zip = new JSZip();
-            for (const item of good) {
-                if (item.ok && item.blob) {
-                    zip.file(item.name, item.blob);
-                }
-            }
-
-            const zipBlob = await zip.generateAsync({ type: "blob", compression: "DEFLATE" });
+            const zipBlob = await zip.generateAsync({
+                type: "blob",
+                compression: "DEFLATE",
+                compressionOptions: { level: 3 }, // faster compression for large batches
+            });
 
             // Phase 3: Trigger browser download
             const downloadUrl = URL.createObjectURL(zipBlob);
@@ -180,10 +177,10 @@ export default function Home() {
             a.click();
             URL.revokeObjectURL(downloadUrl);
 
-            setDownloadProgress({ phase: "done", current: good.length, total: good.length });
+            setDownloadProgress({ phase: "done", current: succeeded, total: succeeded });
 
             // Warn if some failed
-            const failed = total - good.length;
+            const failed = total - succeeded;
             if (failed > 0) {
                 setDownloadError(`${failed} image(s) couldn't be downloaded`);
             }
@@ -216,13 +213,13 @@ export default function Home() {
                             display: "inline-flex",
                             alignItems: "center",
                             gap: "8px",
-                            background: "rgba(99,102,241,0.1)",
-                            border: "1px solid rgba(99,102,241,0.2)",
+                            background: "var(--accent-glow)",
+                            border: "1px solid rgba(227,197,134,0.2)",
                             borderRadius: "20px",
                             padding: "5px 14px",
                             marginBottom: "16px",
                             fontSize: "0.78rem",
-                            color: "var(--brand)",
+                            color: "var(--accent)",
                             fontWeight: 600,
                         }}
                     >
@@ -235,9 +232,7 @@ export default function Home() {
                             fontWeight: 800,
                             lineHeight: 1.1,
                             letterSpacing: "-0.03em",
-                            background: "linear-gradient(135deg, #f0f0f5 30%, #6366f1)",
-                            WebkitBackgroundClip: "text",
-                            WebkitTextFillColor: "transparent",
+                            color: "var(--accent)",
                             margin: "0 0 12px",
                         }}
                     >
@@ -271,7 +266,7 @@ export default function Home() {
                                 gap: "8px",
                             }}
                         >
-                            ⚠️ {searchError}
+                            {searchError}
                         </div>
                     )}
                 </div>
@@ -281,7 +276,7 @@ export default function Home() {
                     <div style={{ maxWidth: "700px", margin: "-20px auto 30px" }}>
                         <ProgressBar
                             visible={true}
-                            label="Searching for images…"
+                            label="Searching for images..."
                             detail="Querying SerpApi"
                         />
                     </div>
@@ -298,7 +293,7 @@ export default function Home() {
                     >
                         <ArrowDown size={40} style={{ margin: "0 auto 12px", opacity: 0.3 }} />
                         <p style={{ fontSize: "1rem" }}>Your image gallery will appear here</p>
-                        <p style={{ fontSize: "0.82rem", marginTop: "4px" }}>Try searching for anything — cats, landscapes, PCBs…</p>
+                        <p style={{ fontSize: "0.82rem", marginTop: "4px" }}>Try searching for anything — cats, landscapes, PCBs...</p>
                     </div>
                 )}
 

@@ -75,7 +75,7 @@ export default function ProgressBar({ progress, label, detail, visible }: Props)
                     style={{
                         height: "100%",
                         borderRadius: "3px",
-                        background: "linear-gradient(90deg, #6366f1, #818cf8)",
+                        background: "var(--accent)",
                         transition: indeterminate ? "none" : "width 0.3s ease",
                         width: indeterminate ? "40%" : `${Math.min(progress, 100)}%`,
                         ...(indeterminate

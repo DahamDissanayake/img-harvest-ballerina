@@ -63,7 +63,7 @@ export default function SearchForm({ onSearch, loading, sessionEmail }: Props) {
             {/* Header */}
             <div style={{ marginBottom: "24px" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "4px" }}>
-                    <Search size={18} color="var(--brand)" />
+                    <Search size={18} color="var(--accent)" />
                     <h2 style={{ fontSize: "1.1rem", fontWeight: 700, color: "var(--text-primary)", margin: 0 }}>
                         Search &amp; Harvest Images
                     </h2>
@@ -71,7 +71,7 @@ export default function SearchForm({ onSearch, loading, sessionEmail }: Props) {
                 <p style={{ fontSize: "0.82rem", color: "var(--text-muted)", margin: 0 }}>
                     {sessionEmail
                         ? `Session: ${sessionEmail}`
-                        : "⚠️ Set a session email in the header to tag your downloads"}
+                        : "Set a session email in the header to tag your downloads"}
                 </p>
             </div>
 
@@ -111,28 +111,28 @@ export default function SearchForm({ onSearch, loading, sessionEmail }: Props) {
                                 padding: "7px 14px",
                                 fontSize: "0.78rem",
                                 fontWeight: 600,
-                                color: "#a78bfa",
-                                background: "rgba(167, 139, 250, 0.1)",
-                                border: "1px solid rgba(167, 139, 250, 0.25)",
+                                color: "var(--accent)",
+                                background: "var(--accent-glow)",
+                                border: "1px solid rgba(227,197,134,0.25)",
                                 borderRadius: "8px",
                                 cursor: refining ? "wait" : "pointer",
                                 transition: "all 0.2s ease",
                             }}
                             onMouseEnter={(e) => {
                                 if (!refining) {
-                                    e.currentTarget.style.background = "rgba(167, 139, 250, 0.18)";
-                                    e.currentTarget.style.borderColor = "rgba(167, 139, 250, 0.4)";
+                                    e.currentTarget.style.background = "rgba(227,197,134,0.18)";
+                                    e.currentTarget.style.borderColor = "rgba(227,197,134,0.4)";
                                 }
                             }}
                             onMouseLeave={(e) => {
-                                e.currentTarget.style.background = "rgba(167, 139, 250, 0.1)";
-                                e.currentTarget.style.borderColor = "rgba(167, 139, 250, 0.25)";
+                                e.currentTarget.style.background = "rgba(227,197,134,0.1)";
+                                e.currentTarget.style.borderColor = "rgba(227,197,134,0.25)";
                             }}
                         >
                             {refining ? (
                                 <>
                                     <Loader2 size={13} style={{ animation: "spin 1s linear infinite" }} />
-                                    Refining…
+                                    Refining...
                                 </>
                             ) : (
                                 <>
@@ -153,7 +153,7 @@ export default function SearchForm({ onSearch, loading, sessionEmail }: Props) {
                             alignItems: "center",
                             gap: "4px",
                         }}>
-                            ⚠️ {refineError}
+                            {refineError}
                         </div>
                     )}
 
@@ -163,15 +163,15 @@ export default function SearchForm({ onSearch, loading, sessionEmail }: Props) {
                             style={{
                                 marginTop: "10px",
                                 padding: "12px 16px",
-                                background: "rgba(167, 139, 250, 0.08)",
-                                border: "1px solid rgba(167, 139, 250, 0.2)",
+                                background: "var(--accent-glow)",
+                                border: "1px solid rgba(227,197,134,0.2)",
                                 borderRadius: "10px",
                                 animation: "fadeSlideIn 0.3s ease",
                             }}
                         >
                             <div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "6px" }}>
-                                <Sparkles size={13} color="#a78bfa" />
-                                <span style={{ fontSize: "0.72rem", fontWeight: 600, color: "#a78bfa", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                                <Sparkles size={13} color="var(--accent)" />
+                                <span style={{ fontSize: "0.72rem", fontWeight: 600, color: "var(--accent)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
                                     AI Suggestion
                                 </span>
                             </div>
@@ -191,8 +191,8 @@ export default function SearchForm({ onSearch, loading, sessionEmail }: Props) {
                                         padding: "5px 12px",
                                         fontSize: "0.75rem",
                                         fontWeight: 600,
-                                        color: "white",
-                                        background: "linear-gradient(135deg, #8b5cf6, #6d28d9)",
+                                        color: "#171717",
+                                        background: "var(--accent)",
                                         border: "none",
                                         borderRadius: "6px",
                                         cursor: "pointer",
@@ -241,25 +241,25 @@ export default function SearchForm({ onSearch, loading, sessionEmail }: Props) {
                         <span style={{ display: "flex", alignItems: "center", gap: "4px" }}>
                             <Sliders size={12} /> IMAGE COUNT
                         </span>
-                        <span style={{ color: "var(--brand)", fontWeight: 700 }}>{count}</span>
+                        <span style={{ color: "var(--accent)", fontWeight: 700 }}>{count}</span>
                     </label>
                     <input
                         type="range"
                         min={5}
-                        max={100}
+                        max={500}
                         step={5}
                         value={count}
                         onChange={(e) => setCount(Number(e.target.value))}
                         disabled={loading}
                         style={{
                             width: "100%",
-                            accentColor: "var(--brand)",
+                            accentColor: "var(--accent)",
                             cursor: loading ? "not-allowed" : "pointer",
                         }}
                     />
                     <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.7rem", color: "var(--text-muted)", marginTop: "4px" }}>
                         <span>5</span>
-                        <span>100</span>
+                        <span>500</span>
                     </div>
                 </div>
 
