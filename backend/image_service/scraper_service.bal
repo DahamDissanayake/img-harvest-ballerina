@@ -5,6 +5,7 @@
 
 import ballerina/http;
 import ballerina/jballerina.java;
+import ballerina/lang.'array;
 import ballerina/log;
 
 // ─── HTTP Service ────────────────────────────────────────────────────────────
@@ -118,34 +119,50 @@ function fetchImageBytes(string url) returns byte[]|error {
     return resp.getBinaryPayload();
 }
 
-// Build in-memory ZIP from a map of filename → bytes using Java builder pattern.
-// Uses `handle` (Java object refs) for all interop to avoid type-mapping issues.
+// ─── ZIP via Java Interop (Base64 + handle — no type-mapping issues) ─────────
+//
+// WHY BASE64?
+// Ballerina cannot pass `byte[]` or `string` to Java directly — the JVM
+// expects BString / BArray, which need the Ballerina runtime JAR at compile
+// time. Using `handle` (opaque Java object reference) plus Base64 encoding
+// bypasses the problem entirely.
+//
+// Flow:  Ballerina byte[] → toBase64 → java:fromString → Java String
+//        Java String → java:toString → Ballerina string → fromBase64 → byte[]
+
 function createZipBytes(map<byte[]> files) returns byte[]|error {
     handle builder = newZipCreator();
     foreach [string, byte[]] [name, content] in files.entries() {
         handle jName = java:fromString(name);
-        check javaAddEntry(builder, jName, content);
+        // Encode bytes as Base64 string, then pass as Java String handle
+        string base64Content = content.toBase64();
+        handle jBase64Content = java:fromString(base64Content);
+        check javaAddEntry(builder, jName, jBase64Content);
     }
-    byte[] result = check javaFinish(builder);
-    return result;
+    handle resultHandle = check javaFinish(builder);
+    // Convert Java String handle → Ballerina string → decode Base64 → byte[]
+    string? base64Result = java:toString(resultHandle);
+    if base64Result is () {
+        return error("ZIP creation returned null");
+    }
+    return 'array:fromBase64(base64Result);
 }
 
-// ─── Java Interop (handle-based, no Ballerina→Java type mapping needed) ──────
+// ─── Java Interop Bindings ───────────────────────────────────────────────────
 
-// Construct a new ZipCreator instance
+// Construct a new ZipCreator instance (public no-arg constructor)
 function newZipCreator() returns handle = @java:Constructor {
     'class: "backend.image_service.libs.ZipCreator"
 } external;
 
-// Add one file entry: name as Java String handle, content as byte[]
-function javaAddEntry(handle zipCreator, handle name, byte[] content) returns error? = @java:Method {
+// Add one file entry: both params are Java String handles
+function javaAddEntry(handle zipCreator, handle name, handle base64Content) returns error? = @java:Method {
     name: "addEntry",
     'class: "backend.image_service.libs.ZipCreator"
 } external;
 
-// Close the ZIP and get the archive bytes
-function javaFinish(handle zipCreator) returns byte[]|error = @java:Method {
+// Close the ZIP — returns a Java String handle (Base64-encoded ZIP bytes)
+function javaFinish(handle zipCreator) returns handle|error = @java:Method {
     name: "finish",
     'class: "backend.image_service.libs.ZipCreator"
 } external;
-
