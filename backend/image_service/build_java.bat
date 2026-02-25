@@ -37,7 +37,15 @@ if defined _JDK_VER (
     )
 )
 
-REM 4. Common install locations
+REM 4. Known JDK 17 install location (confirmed present)
+if exist "C:\Program Files\Java\jdk-17\bin\jar.exe" (
+    set JAVAC_EXE=C:\Program Files\Java\jdk-17\bin\javac
+    set JAR_EXE=C:\Program Files\Java\jdk-17\bin\jar
+    echo [ImgHarvest] Using JDK 17 at: C:\Program Files\Java\jdk-17
+    goto :found_java
+)
+
+REM 5. Other common install locations
 for /d %%d in ("C:\Program Files\Java\jdk*" "C:\Program Files\Eclipse Adoptium\jdk*" "C:\Program Files\Microsoft\jdk*" "C:\Program Files\Zulu\zulu*") do (
     if exist "%%~d\bin\jar.exe" (
         set JAVAC_EXE=%%~d\bin\javac

@@ -118,26 +118,34 @@ function fetchImageBytes(string url) returns byte[]|error {
     return resp.getBinaryPayload();
 }
 
-// Build in-memory ZIP from a map of filename → bytes using Java
+// Build in-memory ZIP from a map of filename → bytes using Java builder pattern.
+// Uses `handle` (Java object refs) for all interop to avoid type-mapping issues.
 function createZipBytes(map<byte[]> files) returns byte[]|error {
-    return buildZipViaJava(files);
-}
-
-// Java interop for ZIP creation
-function buildZipViaJava(map<byte[]> files) returns byte[]|error {
-    // Flatten entries into parallel arrays for Java call
-    string[] names = files.keys();
-    byte[][] contentArrays = [];
-    foreach string name in names {
-        byte[]? item = files[name];
-        contentArrays.push(item is byte[] ? item : []);
+    handle builder = newZipCreator();
+    foreach [string, byte[]] [name, content] in files.entries() {
+        handle jName = java:fromString(name);
+        check javaAddEntry(builder, jName, content);
     }
-    return zipFiles(names, contentArrays);
+    byte[] result = check javaFinish(builder);
+    return result;
 }
 
-// Java method binding for ZIP utility
-function zipFiles(string[] names, byte[][] contents) returns byte[]|error = @java:Method {
-    name: "createZip",
-    'class: "backend.image_service.libs.ZipCreator",
-    paramTypes: ["[Ljava.lang.String;", "[[B"]
+// ─── Java Interop (handle-based, no Ballerina→Java type mapping needed) ──────
+
+// Construct a new ZipCreator instance
+function newZipCreator() returns handle = @java:Constructor {
+    'class: "backend.image_service.libs.ZipCreator"
 } external;
+
+// Add one file entry: name as Java String handle, content as byte[]
+function javaAddEntry(handle zipCreator, handle name, byte[] content) returns error? = @java:Method {
+    name: "addEntry",
+    'class: "backend.image_service.libs.ZipCreator"
+} external;
+
+// Close the ZIP and get the archive bytes
+function javaFinish(handle zipCreator) returns byte[]|error = @java:Method {
+    name: "finish",
+    'class: "backend.image_service.libs.ZipCreator"
+} external;
+

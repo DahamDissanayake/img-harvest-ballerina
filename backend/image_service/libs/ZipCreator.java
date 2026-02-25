@@ -6,28 +6,40 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
 /**
- * ImgHarvest ZipCreator
- * Used by Ballerina via Java Interop.
- * Only depends on java.util.zip (JDK standard library — no external JARs needed).
+ * ImgHarvest ZipCreator — Builder Pattern (Pure Java, no Ballerina imports)
+ *
+ * Used by Ballerina via Java Interop with `handle` type.
+ * All params/returns use standard Java types (String, byte[]).
+ * Only depends on the JDK standard library — no external JARs needed.
  */
 public class ZipCreator {
 
+    private final ByteArrayOutputStream baos;
+    private final ZipOutputStream zos;
+
+    /** Public constructor — called from Ballerina via @java:Constructor. */
+    public ZipCreator() {
+        baos = new ByteArrayOutputStream();
+        zos = new ZipOutputStream(baos);
+    }
+
     /**
-     * Build an in-memory ZIP from parallel arrays of filenames and byte contents.
-     * @param names    Array of filenames
-     * @param contents Array of file byte arrays (parallel to names)
-     * @return         ZIP archive bytes
+     * Add one file entry.
+     * Ballerina passes Java String handle and Java byte[] handle directly.
      */
-    public static byte[] createZip(String[] names, byte[][] contents) throws IOException {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        try (ZipOutputStream zos = new ZipOutputStream(baos)) {
-            for (int i = 0; i < names.length; i++) {
-                ZipEntry entry = new ZipEntry(names[i]);
-                zos.putNextEntry(entry);
-                zos.write(contents[i]);
-                zos.closeEntry();
-            }
-        }
+    public void addEntry(String name, byte[] content) throws IOException {
+        ZipEntry entry = new ZipEntry(name);
+        zos.putNextEntry(entry);
+        zos.write(content);
+        zos.closeEntry();
+    }
+
+    /**
+     * Close the ZIP stream and return the complete archive bytes.
+     * Ballerina receives a Java byte[] handle.
+     */
+    public byte[] finish() throws IOException {
+        zos.close();
         return baos.toByteArray();
     }
 }
