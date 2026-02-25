@@ -23,7 +23,7 @@ service /api on new http:Listener(9090) {
 
     // ── Search ───────────────────────────────────────────────────────────────
     resource function post search(@http:Payload SearchRequest req) returns SearchResponse|http:InternalServerError {
-        log:printInfo("Search request", keyword = req.keyword, count = req.count, format = req.format);
+        log:printInfo("Search request", keyword = req.keyword, count = req.count);
 
         ImageResult[]|error results = searchImages(req.keyword, req.count, req.sessionEmail);
 
@@ -42,7 +42,25 @@ service /api on new http:Listener(9090) {
         };
     }
 
-    // ── Download ─────────────────────────────────────────────────────────────
+    // ── Refine search query with AI ──────────────────────────────────────────
+    resource function post refine(@http:Payload RefineRequest req) returns RefineResponse|http:InternalServerError {
+        log:printInfo("Refine request", keyword = req.keyword);
+
+        string|error refined = refineSearchQuery(req.keyword);
+
+        if refined is error {
+            log:printError("Refine failed", 'error = refined);
+            return <http:InternalServerError>{
+                body: <ErrorResponse>{message: "Refinement failed", detail: refined.message()}
+            };
+        }
+
+        return {
+            original: req.keyword,
+            refined: refined
+        };
+    }
+
     resource function post download(@http:Payload DownloadRequest req)
             returns http:Response|http:InternalServerError {
 

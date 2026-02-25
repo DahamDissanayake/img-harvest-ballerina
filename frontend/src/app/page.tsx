@@ -1,11 +1,34 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
+import JSZip from "jszip";
 import SearchForm, { SearchFormValues } from "@/components/SearchForm";
 import ImageGallery, { ImageResult } from "@/components/ImageGallery";
-import DownloadBar from "@/components/DownloadBar";
+import DownloadBar, { DownloadProgress } from "@/components/DownloadBar";
+import ProgressBar from "@/components/ProgressBar";
 import { useSession } from "@/contexts/SessionContext";
 import { Layers, ArrowDown } from "lucide-react";
+
+// ── Concurrency helper ──────────────────────────────────────────────────────
+async function parallelMap<T, R>(
+    items: T[],
+    concurrency: number,
+    fn: (item: T, index: number) => Promise<R>
+): Promise<R[]> {
+    const results: R[] = new Array(items.length);
+    let nextIndex = 0;
+
+    async function worker() {
+        while (nextIndex < items.length) {
+            const i = nextIndex++;
+            results[i] = await fn(items[i], i);
+        }
+    }
+
+    const workers = Array.from({ length: Math.min(concurrency, items.length) }, () => worker());
+    await Promise.all(workers);
+    return results;
+}
 
 export default function Home() {
     const { sessionEmail } = useSession();
@@ -18,8 +41,14 @@ export default function Home() {
     const [searching, setSearching] = useState(false);
     const [searchError, setSearchError] = useState<string | null>(null);
 
-    const [downloading, setDownloading] = useState(false);
     const [downloadError, setDownloadError] = useState<string | null>(null);
+    const [downloadProgress, setDownloadProgress] = useState<DownloadProgress>({
+        phase: "idle",
+        current: 0,
+        total: 0,
+    });
+
+    const abortRef = useRef<AbortController | null>(null);
 
     // ── Search ────────────────────────────────────────────────────────────────
     const handleSearch = useCallback(
@@ -74,41 +103,104 @@ export default function Home() {
         setSelectedIds(new Set());
     }, []);
 
-    // ── Download ──────────────────────────────────────────────────────────────
+    // ── Download (client-side with real progress) ─────────────────────────────
     const handleDownload = useCallback(async () => {
-        setDownloading(true);
-        setDownloadError(null);
-
         const selectedUrls = images
             .filter((img) => selectedIds.has(img.id))
             .map((img) => img.url);
 
+        const total = selectedUrls.length;
+        if (total === 0) return;
+
+        setDownloadError(null);
+        setDownloadProgress({ phase: "downloading", current: 0, total });
+
+        const abort = new AbortController();
+        abortRef.current = abort;
+
         try {
-            const res = await fetch("/api/download", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ sessionEmail, imageUrls: selectedUrls }),
+            // Phase 1: Download images in parallel (5 at a time)
+            let completed = 0;
+            const downloadResults = await parallelMap(selectedUrls, 5, async (url, index) => {
+                if (abort.signal.aborted) throw new Error("Cancelled");
+
+                try {
+                    const proxyUrl = `/api/proxy-image?url=${encodeURIComponent(url)}`;
+                    const res = await fetch(proxyUrl, { signal: abort.signal });
+
+                    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+                    const blob = await res.blob();
+                    completed++;
+                    setDownloadProgress({ phase: "downloading", current: completed, total });
+
+                    // Derive file extension from content-type or URL
+                    const contentType = res.headers.get("content-type") || "";
+                    let ext = "jpg";
+                    if (contentType.includes("png")) ext = "png";
+                    else if (contentType.includes("webp")) ext = "webp";
+                    else if (contentType.includes("gif")) ext = "gif";
+                    else if (contentType.includes("jpeg") || contentType.includes("jpg")) ext = "jpg";
+
+                    return {
+                        name: `image_${index + 1}.${ext}`,
+                        blob,
+                        ok: true as const,
+                    };
+                } catch {
+                    completed++;
+                    setDownloadProgress({ phase: "downloading", current: completed, total });
+                    return { name: "", blob: null, ok: false as const };
+                }
             });
 
-            if (!res.ok) {
-                const err = await res.json();
-                throw new Error(err.error || "Download failed");
+            // Count successes
+            const good = downloadResults.filter((r) => r.ok);
+            if (good.length === 0) {
+                throw new Error("No images could be downloaded");
             }
 
-            // Trigger browser download
-            const blob = await res.blob();
-            const url = URL.createObjectURL(blob);
+            // Phase 2: Create ZIP
+            setDownloadProgress({ phase: "zipping", current: good.length, total: good.length });
+
+            const zip = new JSZip();
+            for (const item of good) {
+                if (item.ok && item.blob) {
+                    zip.file(item.name, item.blob);
+                }
+            }
+
+            const zipBlob = await zip.generateAsync({ type: "blob", compression: "DEFLATE" });
+
+            // Phase 3: Trigger browser download
+            const downloadUrl = URL.createObjectURL(zipBlob);
             const a = document.createElement("a");
-            a.href = url;
+            a.href = downloadUrl;
             a.download = `dataset_${currentKeyword.replace(/\s+/g, "_")}.zip`;
             a.click();
-            URL.revokeObjectURL(url);
+            URL.revokeObjectURL(downloadUrl);
+
+            setDownloadProgress({ phase: "done", current: good.length, total: good.length });
+
+            // Warn if some failed
+            const failed = total - good.length;
+            if (failed > 0) {
+                setDownloadError(`${failed} image(s) couldn't be downloaded`);
+            }
+
+            // Reset after 3s
+            setTimeout(() => {
+                setDownloadProgress({ phase: "idle", current: 0, total: 0 });
+            }, 3000);
         } catch (err: unknown) {
-            setDownloadError(err instanceof Error ? err.message : "Download failed");
+            if (!abort.signal.aborted) {
+                setDownloadError(err instanceof Error ? err.message : "Download failed");
+            }
+            setDownloadProgress({ phase: "error", current: 0, total: 0 });
         } finally {
-            setDownloading(false);
+            abortRef.current = null;
         }
-    }, [images, selectedIds, sessionEmail, currentKeyword]);
+    }, [images, selectedIds, currentKeyword]);
 
     // ── Render ────────────────────────────────────────────────────────────────
     return (
@@ -184,6 +276,17 @@ export default function Home() {
                     )}
                 </div>
 
+                {/* Search progress */}
+                {searching && (
+                    <div style={{ maxWidth: "700px", margin: "-20px auto 30px" }}>
+                        <ProgressBar
+                            visible={true}
+                            label="Searching for images…"
+                            detail="Querying SerpApi"
+                        />
+                    </div>
+                )}
+
                 {/* Empty state */}
                 {images.length === 0 && !searching && (
                     <div
@@ -235,7 +338,7 @@ export default function Home() {
                 selectedCount={selectedIds.size}
                 totalCount={images.length}
                 onDownload={handleDownload}
-                downloading={downloading}
+                downloadProgress={downloadProgress}
                 downloadError={downloadError}
             />
         </>

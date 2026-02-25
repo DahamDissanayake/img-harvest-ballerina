@@ -4,7 +4,6 @@
 public type SearchRequest record {|
     string keyword;
     int count = 20;
-    string format = "png"; // "png" | "jpg" | "webp"
     string sessionEmail;
 |};
 
@@ -26,10 +25,10 @@ public type SearchResponse record {|
     int total;
 |};
 
-// Request from the frontend to download + convert selected images
+// Request from the frontend to download selected images as a ZIP
 public type DownloadRequest record {|
     string sessionEmail;
-    string format; // "png" | "jpg" | "webp"
+    string format = "original"; // kept for compatibility, not used
     string[] imageUrls;
 |};
 
@@ -37,4 +36,15 @@ public type DownloadRequest record {|
 public type ErrorResponse record {|
     string message;
     string? detail = ();
+|};
+
+// AI search refinement request
+public type RefineRequest record {|
+    string keyword;
+|};
+
+// AI search refinement response
+public type RefineResponse record {|
+    string original;
+    string refined;
 |};

@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import Image from "next/image";
 import { CheckSquare, Square, AlertTriangle, ExternalLink } from "lucide-react";
 
 export interface ImageResult {
@@ -56,14 +55,19 @@ function ImageCard({
             {/* Image */}
             {!imgError ? (
                 <div style={{ position: "relative", width: "100%", height: "180px" }}>
-                    <Image
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
                         src={image.thumbnail || image.url}
                         alt={image.title}
-                        fill
-                        style={{ objectFit: "cover", display: loaded ? "block" : "none" }}
+                        referrerPolicy="no-referrer"
+                        style={{
+                            width: "100%",
+                            height: "100%",
+                            objectFit: "cover",
+                            display: loaded ? "block" : "none",
+                        }}
                         onLoad={() => setLoaded(true)}
                         onError={() => setImgError(true)}
-                        unoptimized
                     />
                 </div>
             ) : (

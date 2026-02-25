@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Search, Sliders, Loader2 } from "lucide-react";
+import { Search, Sliders, Loader2, Sparkles } from "lucide-react";
 
 export interface SearchFormValues {
     keyword: string;
@@ -17,11 +17,45 @@ interface Props {
 export default function SearchForm({ onSearch, loading, sessionEmail }: Props) {
     const [keyword, setKeyword] = useState("");
     const [count, setCount] = useState(20);
+    const [refining, setRefining] = useState(false);
+    const [refinedQuery, setRefinedQuery] = useState<string | null>(null);
+    const [refineError, setRefineError] = useState<string | null>(null);
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         if (!keyword.trim()) return;
         onSearch({ keyword: keyword.trim(), count });
+    };
+
+    const handleRefine = async () => {
+        if (!keyword.trim()) return;
+        setRefining(true);
+        setRefineError(null);
+        setRefinedQuery(null);
+
+        try {
+            const res = await fetch("/api/refine", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ keyword: keyword.trim() }),
+            });
+            const data = await res.json();
+
+            if (!res.ok) throw new Error(data.error || "Refinement failed");
+
+            setRefinedQuery(data.refined);
+        } catch (err: unknown) {
+            setRefineError(err instanceof Error ? err.message : "Refinement failed");
+        } finally {
+            setRefining(false);
+        }
+    };
+
+    const applyRefined = () => {
+        if (refinedQuery) {
+            setKeyword(refinedQuery);
+            setRefinedQuery(null);
+        }
     };
 
     return (
@@ -45,17 +79,160 @@ export default function SearchForm({ onSearch, loading, sessionEmail }: Props) {
                 {/* Keyword */}
                 <div>
                     <label style={{ display: "block", fontSize: "0.8rem", fontWeight: 600, color: "var(--text-secondary)", marginBottom: "6px" }}>
-                        KEYWORD
+                        WHAT YOU WANT TO SEARCH
                     </label>
-                    <input
-                        type="text"
-                        className="input-base"
-                        placeholder="e.g. cats, cherry blossoms, circuit boards..."
-                        value={keyword}
-                        onChange={(e) => setKeyword(e.target.value)}
-                        style={{ width: "100%", padding: "10px 14px", fontSize: "0.95rem" }}
-                        disabled={loading}
-                    />
+                    <div style={{ position: "relative" }}>
+                        <input
+                            type="text"
+                            className="input-base"
+                            placeholder="e.g. cute cats sleeping, circuit board close up, sunset over mountains..."
+                            value={keyword}
+                            onChange={(e) => {
+                                setKeyword(e.target.value);
+                                setRefinedQuery(null);
+                                setRefineError(null);
+                            }}
+                            style={{ width: "100%", padding: "10px 14px", fontSize: "0.95rem" }}
+                            disabled={loading}
+                        />
+                    </div>
+
+                    {/* Refine with AI button */}
+                    {keyword.trim().length > 2 && !refinedQuery && (
+                        <button
+                            type="button"
+                            onClick={handleRefine}
+                            disabled={refining || loading}
+                            style={{
+                                marginTop: "10px",
+                                display: "inline-flex",
+                                alignItems: "center",
+                                gap: "6px",
+                                padding: "7px 14px",
+                                fontSize: "0.78rem",
+                                fontWeight: 600,
+                                color: "#a78bfa",
+                                background: "rgba(167, 139, 250, 0.1)",
+                                border: "1px solid rgba(167, 139, 250, 0.25)",
+                                borderRadius: "8px",
+                                cursor: refining ? "wait" : "pointer",
+                                transition: "all 0.2s ease",
+                            }}
+                            onMouseEnter={(e) => {
+                                if (!refining) {
+                                    e.currentTarget.style.background = "rgba(167, 139, 250, 0.18)";
+                                    e.currentTarget.style.borderColor = "rgba(167, 139, 250, 0.4)";
+                                }
+                            }}
+                            onMouseLeave={(e) => {
+                                e.currentTarget.style.background = "rgba(167, 139, 250, 0.1)";
+                                e.currentTarget.style.borderColor = "rgba(167, 139, 250, 0.25)";
+                            }}
+                        >
+                            {refining ? (
+                                <>
+                                    <Loader2 size={13} style={{ animation: "spin 1s linear infinite" }} />
+                                    Refining…
+                                </>
+                            ) : (
+                                <>
+                                    <Sparkles size={13} />
+                                    Refine with AI
+                                </>
+                            )}
+                        </button>
+                    )}
+
+                    {/* Refine error */}
+                    {refineError && (
+                        <div style={{
+                            marginTop: "8px",
+                            fontSize: "0.78rem",
+                            color: "var(--danger)",
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "4px",
+                        }}>
+                            ⚠️ {refineError}
+                        </div>
+                    )}
+
+                    {/* Refined query suggestion */}
+                    {refinedQuery && (
+                        <div
+                            style={{
+                                marginTop: "10px",
+                                padding: "12px 16px",
+                                background: "rgba(167, 139, 250, 0.08)",
+                                border: "1px solid rgba(167, 139, 250, 0.2)",
+                                borderRadius: "10px",
+                                animation: "fadeSlideIn 0.3s ease",
+                            }}
+                        >
+                            <div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "6px" }}>
+                                <Sparkles size={13} color="#a78bfa" />
+                                <span style={{ fontSize: "0.72rem", fontWeight: 600, color: "#a78bfa", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                                    AI Suggestion
+                                </span>
+                            </div>
+                            <p style={{
+                                margin: "0 0 10px",
+                                fontSize: "0.95rem",
+                                fontWeight: 600,
+                                color: "var(--text-primary)",
+                            }}>
+                                {refinedQuery}
+                            </p>
+                            <div style={{ display: "flex", gap: "8px" }}>
+                                <button
+                                    type="button"
+                                    onClick={applyRefined}
+                                    style={{
+                                        padding: "5px 12px",
+                                        fontSize: "0.75rem",
+                                        fontWeight: 600,
+                                        color: "white",
+                                        background: "linear-gradient(135deg, #8b5cf6, #6d28d9)",
+                                        border: "none",
+                                        borderRadius: "6px",
+                                        cursor: "pointer",
+                                        transition: "all 0.15s ease",
+                                    }}
+                                >
+                                    Use this
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setRefinedQuery(null)}
+                                    style={{
+                                        padding: "5px 12px",
+                                        fontSize: "0.75rem",
+                                        fontWeight: 600,
+                                        color: "var(--text-muted)",
+                                        background: "transparent",
+                                        border: "1px solid var(--border)",
+                                        borderRadius: "6px",
+                                        cursor: "pointer",
+                                    }}
+                                >
+                                    Dismiss
+                                </button>
+                            </div>
+
+                            <style jsx>{`
+                                @keyframes fadeSlideIn {
+                                    from {
+                                        opacity: 0;
+                                        transform: translateY(-6px);
+                                    }
+                                    to {
+                                        opacity: 1;
+                                        transform: translateY(0);
+                                    }
+                                }
+                            `}</style>
+                        </div>
+                    )}
                 </div>
 
                 {/* Count slider */}

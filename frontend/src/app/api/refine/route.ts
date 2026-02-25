@@ -5,28 +5,19 @@ const BACKEND_URL = process.env.BACKEND_URL || "http://localhost:9090";
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    console.log("[/api/search] Forwarding to:", `${BACKEND_URL}/api/search`);
-    console.log("[/api/search] Request body:", JSON.stringify(body));
 
-    const response = await fetch(`${BACKEND_URL}/api/search`, {
+    const response = await fetch(`${BACKEND_URL}/api/refine`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
     });
 
-    console.log("[/api/search] Backend status:", response.status);
-
     const text = await response.text();
-    console.log("[/api/search] Backend response:", text.substring(0, 500));
 
     let data;
     try {
       data = JSON.parse(text);
     } catch {
-      console.error(
-        "[/api/search] Backend returned non-JSON:",
-        text.substring(0, 200),
-      );
       return NextResponse.json(
         { error: "Backend returned non-JSON response" },
         { status: 502 },
@@ -35,19 +26,16 @@ export async function POST(req: NextRequest) {
 
     if (!response.ok) {
       return NextResponse.json(
-        { error: data.message || "Backend search failed" },
+        { error: data.message || "Refinement failed" },
         { status: response.status },
       );
     }
 
     return NextResponse.json(data);
   } catch (err: unknown) {
-    console.error("[/api/search] Error:", err);
+    console.error("[/api/refine] Error:", err);
     return NextResponse.json(
-      {
-        error:
-          "Failed to connect to backend service. Is the Ballerina server running?",
-      },
+      { error: "Failed to connect to backend service." },
       { status: 503 },
     );
   }
