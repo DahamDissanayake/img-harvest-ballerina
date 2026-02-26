@@ -1,0 +1,9 @@
+@echo off
+cd /d "%~dp0"
+echo Stopping and removing database containers and volumes...
+docker-compose down -v
+echo Removing postgres_data directory...
+rmdir /s /q postgres_data
+echo Starting database container...
+docker-compose up -d
+echo Database reset complete! Wait a few seconds for Postgres to initialize.

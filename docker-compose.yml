@@ -1,16 +1,16 @@
-version: '3.8'
+version: "3.8"
 
 services:
   db:
     image: postgres:15
     container_name: imgharvest_db
     environment:
-      POSTGRES_USER: user
-      POSTGRES_PASSWORD: password
+      POSTGRES_USER: harvest_admin
+      POSTGRES_PASSWORD: harvest_password
       POSTGRES_DB: imgharvest
     ports:
-      - "5432:5432"
+      - "5433:5432"
     volumes:
-      - ./postgres_data:/var/lib/postgresql/data
+      - ./postgres_data_final:/var/lib/postgresql/data
       - ./backend/database/schema.sql:/docker-entrypoint-initdb.d/schema.sql
     restart: unless-stopped

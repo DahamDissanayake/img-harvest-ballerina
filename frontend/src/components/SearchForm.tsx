@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Search, Sliders, Loader2, Sparkles } from "lucide-react";
+import { useSession } from "next-auth/react";
 
 export interface SearchFormValues {
     keyword: string;
@@ -11,10 +12,10 @@ export interface SearchFormValues {
 interface Props {
     onSearch: (values: SearchFormValues) => void;
     loading: boolean;
-    sessionEmail: string;
 }
 
-export default function SearchForm({ onSearch, loading, sessionEmail }: Props) {
+export default function SearchForm({ onSearch, loading }: Props) {
+    const { data: session } = useSession();
     const [keyword, setKeyword] = useState("");
     const [count, setCount] = useState(20);
     const [refining, setRefining] = useState(false);
@@ -69,9 +70,9 @@ export default function SearchForm({ onSearch, loading, sessionEmail }: Props) {
                     </h2>
                 </div>
                 <p style={{ fontSize: "0.82rem", color: "var(--text-muted)", margin: 0 }}>
-                    {sessionEmail
-                        ? `Session: ${sessionEmail}`
-                        : "Set a session email in the header to tag your downloads"}
+                    {session?.user?.email
+                        ? `Logged in as: ${session.user.email}`
+                        : "Please log in to harvest and tag your downloads"}
                 </p>
             </div>
 
@@ -255,7 +256,7 @@ export default function SearchForm({ onSearch, loading, sessionEmail }: Props) {
                 <button
                     type="submit"
                     className="btn-brand"
-                    disabled={loading || !keyword.trim()}
+                    disabled={loading || !keyword.trim() || !session}
                     style={{ padding: "12px 24px", fontSize: "0.95rem", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px" }}
                 >
                     {loading ? (

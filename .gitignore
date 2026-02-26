@@ -1,0 +1,10 @@
+# PostgreSQL Docker Volumes
+postgres_data/
+postgres_data_final/
+postgres_db_data/
+postgres_data*/
+
+# General
+node_modules/
+.env*
+.DS_Store

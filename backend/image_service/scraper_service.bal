@@ -9,6 +9,7 @@ import ballerina/lang.'array;
 import ballerina/log;
 import ballerina/sql;
 import ballerinax/postgresql;
+import ballerinax/postgresql.driver as _;
 
 // ─── Database Configuration ──────────────────────────────────────────────────
 configurable string dbHost = ?;
@@ -40,25 +41,42 @@ final postgresql:Client dbClient = check new (
 service /api on new http:Listener(9090) {
 
     // ── Search ───────────────────────────────────────────────────────────────
-    resource function post search(@http:Payload SearchRequest req) returns SearchResponse|http:InternalServerError|error {
+    resource function post search(@http:Payload SearchRequest req) returns SearchResponse|http:InternalServerError|http:Unauthorized|http:BadRequest|error {
         log:printInfo("Search request", keyword = req.keyword, count = req.count);
 
+        if req.userId == "" {
+            return <http:Unauthorized>{
+                body: <ErrorResponse>{message: "Unauthorized", detail: "userId is missing in the payload"}
+            };
+        }
+
+        int|error parsedUserId = int:fromString(req.userId);
+        if parsedUserId is error {
+            return <http:BadRequest>{
+                body: <ErrorResponse>{message: "Bad Request", detail: "Invalid userId formatting"}
+            };
+        }
+
         // --- Step A: Insert into search_sessions ---
-        sql:ParameterizedQuery insertSessionQuery = `INSERT INTO search_sessions (user_id, keyword, timestamp) 
-                                                     VALUES (${req.userId}, ${req.keyword}, CURRENT_TIMESTAMP)`;
-        
-        sql:ExecutionResult result = check dbClient->execute(insertSessionQuery);
-        
-        // --- Step B: Retrieve the generated ID of that new session ---
-        var insertId = result.lastInsertId;
         int sessionId = 0;
+        sql:ParameterizedQuery insertSessionQuery = `INSERT INTO search_sessions (user_id, keyword, count) 
+                                                     VALUES (${parsedUserId}, ${req.keyword}, ${req.count})`;
         
-        if insertId is int {
-            sessionId = insertId;
-        } else if insertId is string {
-            sessionId = check int:fromString(insertId);
+        sql:ExecutionResult|sql:Error sessionResult = dbClient->execute(insertSessionQuery);
+        
+        if sessionResult is sql:Error {
+            log:printError("Telemetry insert failed. Searching will proceed without logging session.", 'error = sessionResult);
         } else {
-            return error("Failed to retrieve generated session ID from database.");
+            // --- Step B: Retrieve the generated ID of that new session ---
+            var insertId = sessionResult.lastInsertId;
+            if insertId is int {
+                sessionId = insertId;
+            } else if insertId is string {
+                int|error idVal = int:fromString(insertId);
+                if idVal is int {
+                    sessionId = idVal;
+                }
+            }
         }
 
         ImageResult[]|error results = searchImages(req.keyword, req.count, req.sessionEmail);
@@ -71,12 +89,13 @@ service /api on new http:Listener(9090) {
         }
 
         // --- Step C: Batch insert the image results linked to the session ID ---
-        if results.length() > 0 {
+        if sessionId > 0 && results.length() > 0 {
             sql:ParameterizedQuery[] insertImageQueries = from ImageResult res in results
                                                           select `INSERT INTO image_results (session_id, image_url) 
                                                                   VALUES (${sessionId}, ${res.url})`;
             
-            sql:ExecutionResult[] _ = check dbClient->batchExecute(insertImageQueries);
+            // Execute batch inserts on a separate strand (thread) so the HTTP response isn't blocked
+            _ = start executeTelemetryBatch(insertImageQueries);
         }
 
         return {
@@ -229,3 +248,13 @@ function javaFinish(handle zipCreator) returns handle|error = @java:Method {
     name: "finish",
     'class: "backend.image_service.libs.ZipCreator"
 } external;
+
+// ─── Asynchronous Telemetry Workers ──────────────────────────────────────────
+
+// Runs safely on a separate strand without blocking the main event thread
+function executeTelemetryBatch(sql:ParameterizedQuery[] queries) {
+    sql:ExecutionResult[]|sql:Error batchRes = dbClient->batchExecute(queries);
+    if batchRes is sql:Error {
+        log:printError("Telemetry batch image insert failed asynchronously.", 'error = batchRes);
+    }
+}

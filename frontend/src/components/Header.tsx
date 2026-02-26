@@ -1,33 +1,10 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
-import { Database, Mail, CheckCircle, X, Zap } from "lucide-react";
-import { useSession } from "@/contexts/SessionContext";
+import { useSession, signOut } from "next-auth/react";
+import Link from "next/link";
 
 export default function Header() {
-    const { sessionEmail, setSessionEmail } = useSession();
-    const [editing, setEditing] = useState(false);
-    const [draft, setDraft] = useState("");
-    const inputRef = useRef<HTMLInputElement>(null);
-
-    useEffect(() => {
-        if (editing && inputRef.current) {
-            inputRef.current.focus();
-        }
-    }, [editing]);
-
-    const handleSave = () => {
-        const trimmed = draft.trim();
-        if (trimmed && trimmed.includes("@")) {
-            setSessionEmail(trimmed);
-        }
-        setEditing(false);
-    };
-
-    const handleKeyDown = (e: React.KeyboardEvent) => {
-        if (e.key === "Enter") handleSave();
-        if (e.key === "Escape") setEditing(false);
-    };
+    const { data: session } = useSession();
 
     return (
         <header
@@ -57,83 +34,52 @@ export default function Header() {
                 </div>
 
                 {/* Session Bar */}
-                <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                    {!sessionEmail ? (
-                        editing ? (
-                            <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                                <input
-                                    ref={inputRef}
-                                    type="email"
-                                    className="input-base"
-                                    placeholder="your@email.com"
-                                    value={draft}
-                                    onChange={(e) => setDraft(e.target.value)}
-                                    onKeyDown={handleKeyDown}
-                                    style={{ padding: "6px 12px", fontSize: "0.85rem", width: "200px" }}
-                                />
-                                <button
-                                    onClick={handleSave}
+                <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                    {session ? (
+                        <>
+                            {session.user?.image && (
+                                // eslint-disable-next-line @next/next/no-img-element
+                                <img
+                                    src={session.user.image}
+                                    alt="Avatar"
                                     style={{
-                                        background: "var(--accent)",
-                                        border: "none",
-                                        borderRadius: "8px",
-                                        padding: "6px 12px",
-                                        color: "#171717",
-                                        cursor: "pointer",
-                                        fontSize: "0.8rem",
-                                        fontWeight: 600,
+                                        width: "32px",
+                                        height: "32px",
+                                        borderRadius: "50%",
+                                        border: "1px solid var(--border)",
+                                        objectFit: "cover"
                                     }}
-                                >
-                                    Save
-                                </button>
-                                <button
-                                    onClick={() => setEditing(false)}
-                                    style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text-muted)", padding: "4px" }}
-                                >
-                                    <X size={16} />
-                                </button>
-                            </div>
-                        ) : (
+                                />
+                            )}
                             <button
-                                onClick={() => { setEditing(true); setDraft(""); }}
+                                onClick={() => signOut()}
                                 style={{
-                                    display: "flex",
-                                    alignItems: "center",
-                                    gap: "6px",
                                     background: "var(--bg-card)",
                                     border: "1px solid var(--border)",
-                                    borderRadius: "8px",
-                                    padding: "6px 12px",
+                                    borderRadius: "7px",
+                                    padding: "5px 12px",
                                     color: "var(--text-secondary)",
                                     cursor: "pointer",
-                                    fontSize: "0.85rem",
-                                    transition: "all 0.2s",
+                                    fontSize: "0.78rem",
+                                    fontWeight: 600,
                                 }}
                             >
-                                <Mail size={14} />
-                                Set session email
+                                Sign Out
                             </button>
-                        )
+                        </>
                     ) : (
-                        <div
+                        <Link
+                            href="/login"
+                            className="btn-brand"
                             style={{
-                                display: "flex",
-                                alignItems: "center",
-                                gap: "6px",
-                                background: "var(--accent-glow)",
-                                border: "1px solid rgba(227,197,134,0.3)",
-                                borderRadius: "8px",
-                                padding: "6px 12px",
-                                cursor: "pointer",
+                                padding: "8px 16px",
+                                fontSize: "0.85rem",
+                                textDecoration: "none",
+                                display: "inline-block"
                             }}
-                            onClick={() => { setEditing(true); setDraft(sessionEmail); }}
-                            title="Click to change email"
                         >
-                            <CheckCircle size={13} color="var(--accent)" />
-                            <span style={{ fontSize: "0.82rem", color: "var(--text-primary)", fontWeight: 500 }}>
-                                {sessionEmail}
-                            </span>
-                        </div>
+                            Login
+                        </Link>
                     )}
                 </div>
             </div>

@@ -1,5 +1,11 @@
 {
-  "css.validate": false,
-  "less.validate": false,
-  "scss.validate": false
+  "java.project.resourceFilters": ["node_modules", ".next", "frontend"],
+  "files.exclude": {
+    "**/frontend/.next": true,
+    "**/node_modules": true
+  },
+  "files.watcherExclude": {
+    "**/frontend/.next/**": true,
+    "**/node_modules/**": true
+  }
 }

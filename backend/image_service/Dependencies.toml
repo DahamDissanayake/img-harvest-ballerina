@@ -21,6 +21,14 @@ dependencies = [
 
 [[package]]
 org = "ballerina"
+name = "avro"
+version = "1.2.0"
+dependencies = [
+	{org = "ballerina", name = "jballerina.java"}
+]
+
+[[package]]
+org = "ballerina"
 name = "cache"
 version = "3.10.0"
 dependencies = [
@@ -287,6 +295,20 @@ modules = [
 
 [[package]]
 org = "ballerina"
+name = "sql"
+version = "1.18.0"
+dependencies = [
+	{org = "ballerina", name = "io"},
+	{org = "ballerina", name = "jballerina.java"},
+	{org = "ballerina", name = "lang.object"},
+	{org = "ballerina", name = "time"}
+]
+modules = [
+	{org = "ballerina", packageName = "sql", moduleName = "sql"}
+]
+
+[[package]]
+org = "ballerina"
 name = "task"
 version = "2.11.1"
 dependencies = [
@@ -337,6 +359,86 @@ dependencies = [
 ]
 
 [[package]]
+org = "ballerinai"
+name = "observe"
+version = "0.0.0"
+dependencies = [
+	{org = "ballerina", name = "jballerina.java"},
+	{org = "ballerina", name = "observe"}
+]
+
+[[package]]
+org = "ballerinax"
+name = "cdc"
+version = "1.2.1"
+dependencies = [
+	{org = "ballerina", name = "crypto"},
+	{org = "ballerina", name = "data.jsondata"},
+	{org = "ballerina", name = "io"},
+	{org = "ballerina", name = "jballerina.java"},
+	{org = "ballerina", name = "log"},
+	{org = "ballerinai", name = "observe"},
+	{org = "ballerinax", name = "kafka"}
+]
+
+[[package]]
+org = "ballerinax"
+name = "confluent.cavroserdes"
+version = "1.0.2"
+dependencies = [
+	{org = "ballerina", name = "avro"},
+	{org = "ballerina", name = "jballerina.java"},
+	{org = "ballerinai", name = "observe"},
+	{org = "ballerinax", name = "confluent.cregistry"}
+]
+
+[[package]]
+org = "ballerinax"
+name = "confluent.cregistry"
+version = "0.4.3"
+dependencies = [
+	{org = "ballerina", name = "jballerina.java"}
+]
+
+[[package]]
+org = "ballerinax"
+name = "kafka"
+version = "4.6.3"
+dependencies = [
+	{org = "ballerina", name = "crypto"},
+	{org = "ballerina", name = "jballerina.java"},
+	{org = "ballerina", name = "time"},
+	{org = "ballerina", name = "uuid"},
+	{org = "ballerinai", name = "observe"},
+	{org = "ballerinax", name = "confluent.cavroserdes"},
+	{org = "ballerinax", name = "confluent.cregistry"}
+]
+
+[[package]]
+org = "ballerinax"
+name = "postgresql"
+version = "1.16.3"
+dependencies = [
+	{org = "ballerina", name = "crypto"},
+	{org = "ballerina", name = "io"},
+	{org = "ballerina", name = "jballerina.java"},
+	{org = "ballerina", name = "sql"},
+	{org = "ballerina", name = "time"},
+	{org = "ballerinax", name = "cdc"}
+]
+modules = [
+	{org = "ballerinax", packageName = "postgresql", moduleName = "postgresql"}
+]
+
+[[package]]
+org = "ballerinax"
+name = "postgresql.driver"
+version = "1.6.2"
+modules = [
+	{org = "ballerinax", packageName = "postgresql.driver", moduleName = "postgresql.driver"}
+]
+
+[[package]]
 org = "imgharvest"
 name = "image_service"
 version = "0.1.0"
@@ -349,7 +451,10 @@ dependencies = [
 	{org = "ballerina", name = "lang.runtime"},
 	{org = "ballerina", name = "log"},
 	{org = "ballerina", name = "os"},
-	{org = "ballerina", name = "test"}
+	{org = "ballerina", name = "sql"},
+	{org = "ballerina", name = "test"},
+	{org = "ballerinax", name = "postgresql"},
+	{org = "ballerinax", name = "postgresql.driver"}
 ]
 modules = [
 	{org = "imgharvest", packageName = "image_service", moduleName = "image_service"}

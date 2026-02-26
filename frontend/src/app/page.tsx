@@ -6,7 +6,7 @@ import SearchForm, { SearchFormValues } from "@/components/SearchForm";
 import ImageGallery, { ImageResult } from "@/components/ImageGallery";
 import DownloadBar, { DownloadProgress } from "@/components/DownloadBar";
 import ProgressBar from "@/components/ProgressBar";
-import { useSession } from "@/contexts/SessionContext";
+import { useSession } from "next-auth/react";
 import { Layers, ArrowDown } from "lucide-react";
 
 // ── Concurrency helper ──────────────────────────────────────────────────────
@@ -31,7 +31,9 @@ async function parallelMap<T, R>(
 }
 
 export default function Home() {
-    const { sessionEmail } = useSession();
+    const { data: session, status } = useSession();
+    const sessionEmail = session?.user?.email || "";
+    const userId = (session?.user as any)?.id;
 
     const [images, setImages] = useState<ImageResult[]>([]);
     const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -53,8 +55,8 @@ export default function Home() {
     // ── Search ────────────────────────────────────────────────────────────────
     const handleSearch = useCallback(
         async ({ keyword, count }: SearchFormValues) => {
-            if (!sessionEmail) {
-                setSearchError("Please set a session email in the header first.");
+            if (status !== "authenticated" || !userId) {
+                setSearchError("Please log in to perform a search.");
                 return;
             }
             setSearching(true);
@@ -67,7 +69,7 @@ export default function Home() {
                 const res = await fetch("/api/search", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ keyword, count, sessionEmail }),
+                    body: JSON.stringify({ keyword, count, sessionEmail, userId: String(userId) }),
                 });
                 const data = await res.json();
 
@@ -84,7 +86,7 @@ export default function Home() {
                 setSearching(false);
             }
         },
-        [sessionEmail]
+        [status, userId, sessionEmail]
     );
 
     // ── Selection ─────────────────────────────────────────────────────────────
@@ -249,7 +251,6 @@ export default function Home() {
                     <SearchForm
                         onSearch={handleSearch}
                         loading={searching}
-                        sessionEmail={sessionEmail}
                     />
                     {searchError && (
                         <div

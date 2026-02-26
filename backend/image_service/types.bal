@@ -5,7 +5,7 @@ public type SearchRequest record {|
     string keyword;
     int count = 20;
     string sessionEmail;
-    string userId;
+    string userId = "";
 |};
 
 // Single image result returned from SerpApi
