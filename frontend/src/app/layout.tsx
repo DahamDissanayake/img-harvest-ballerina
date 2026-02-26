@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import { SessionProvider } from "@/contexts/SessionContext";
+import { Providers } from "@/components/Providers";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 
@@ -18,13 +18,13 @@ export default function RootLayout({
     return (
         <html lang="en">
             <body suppressHydrationWarning>
-                <SessionProvider>
+                <Providers>
                     <div className="min-h-screen flex flex-col">
                         <Header />
                         <main className="flex-1">{children}</main>
                         <Footer />
                     </div>
-                </SessionProvider>
+                </Providers>
             </body>
         </html>
     );

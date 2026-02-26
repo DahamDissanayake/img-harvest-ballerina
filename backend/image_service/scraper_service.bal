@@ -7,6 +7,24 @@ import ballerina/http;
 import ballerina/jballerina.java;
 import ballerina/lang.'array;
 import ballerina/log;
+import ballerina/sql;
+import ballerinax/postgresql;
+
+// ─── Database Configuration ──────────────────────────────────────────────────
+configurable string dbHost = ?;
+configurable string dbUser = ?;
+configurable string dbPassword = ?;
+configurable string dbDatabase = ?;
+configurable int dbPort = ?;
+
+final postgresql:Client dbClient = check new (
+    host = dbHost,
+    username = dbUser,
+    password = dbPassword,
+    database = dbDatabase,
+    port = dbPort
+);
+
 
 // ─── HTTP Service ────────────────────────────────────────────────────────────
 
@@ -22,8 +40,26 @@ import ballerina/log;
 service /api on new http:Listener(9090) {
 
     // ── Search ───────────────────────────────────────────────────────────────
-    resource function post search(@http:Payload SearchRequest req) returns SearchResponse|http:InternalServerError {
+    resource function post search(@http:Payload SearchRequest req) returns SearchResponse|http:InternalServerError|error {
         log:printInfo("Search request", keyword = req.keyword, count = req.count);
+
+        // --- Step A: Insert into search_sessions ---
+        sql:ParameterizedQuery insertSessionQuery = `INSERT INTO search_sessions (user_id, keyword, timestamp) 
+                                                     VALUES (${req.userId}, ${req.keyword}, CURRENT_TIMESTAMP)`;
+        
+        sql:ExecutionResult result = check dbClient->execute(insertSessionQuery);
+        
+        // --- Step B: Retrieve the generated ID of that new session ---
+        var insertId = result.lastInsertId;
+        int sessionId = 0;
+        
+        if insertId is int {
+            sessionId = insertId;
+        } else if insertId is string {
+            sessionId = check int:fromString(insertId);
+        } else {
+            return error("Failed to retrieve generated session ID from database.");
+        }
 
         ImageResult[]|error results = searchImages(req.keyword, req.count, req.sessionEmail);
 
@@ -32,6 +68,15 @@ service /api on new http:Listener(9090) {
             return <http:InternalServerError>{
                 body: <ErrorResponse>{message: "Search failed", detail: results.message()}
             };
+        }
+
+        // --- Step C: Batch insert the image results linked to the session ID ---
+        if results.length() > 0 {
+            sql:ParameterizedQuery[] insertImageQueries = from ImageResult res in results
+                                                          select `INSERT INTO image_results (session_id, image_url) 
+                                                                  VALUES (${sessionId}, ${res.url})`;
+            
+            sql:ExecutionResult[] _ = check dbClient->batchExecute(insertImageQueries);
         }
 
         return {
