@@ -26,8 +26,6 @@ export default function DownloadBar({
     downloadProgress,
     downloadError,
 }: Props) {
-    if (totalCount === 0) return null;
-
     const { phase, current, total } = downloadProgress;
     const isActive = phase !== "idle" && phase !== "error";
 
@@ -40,6 +38,9 @@ export default function DownloadBar({
         window.addEventListener("beforeunload", handler);
         return () => window.removeEventListener("beforeunload", handler);
     }, [isActive, phase]);
+
+    if (totalCount === 0) return null;
+
     const isDone = phase === "done";
 
     // Progress percentage
