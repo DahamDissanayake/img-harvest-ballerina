@@ -1,8 +1,8 @@
 # ImgHarvest
 
-_Note: This will soon be available deployed on Choreo - WSO2._
+_Note: This will be available soon hosted on Choreo WSO2, and deployments are underway._
 
-**AI-Powered Image Dataset Builder** — Search the web for images, refine your queries with AI, review results in a gallery, and download ZIP-packaged datasets with real-time progress tracking.
+This project leverages a modern web and microservices stack to provide a seamless AI-powered image dataset building experience. It works by having an AI agent refine user search queries, fetching images via a SerpApi integration, and using parallel client-side processing to package the selected images into a ZIP file.
 
 ---
 
@@ -17,13 +17,7 @@ _Note: This will soon be available deployed on Choreo - WSO2._
 
 ## Tech Stack
 
-| Layer             | Technology                                                 |
-| ----------------- | ---------------------------------------------------------- |
-| **Frontend**      | Next.js 15 (App Router), Tailwind CSS, Lucide React, JSZip |
-| **Backend**       | Ballerina (bal), Java Interop (ZIP creation)               |
-| **AI Refinement** | Groq API (Llama 3.3 70B) — free tier                       |
-| **Image Source**  | SerpApi (Google Images)                                    |
-| **Ports**         | Frontend → `localhost:3000` · Backend → `localhost:9090`   |
+The technology stack driving this project includes Next.js 15 for the frontend framework, Tailwind CSS for styling, Lucide React for UI icons, JSZip for client-side archive processing, Ballerina (bal) for the robust backend service, Java Interop for server-side ZIP creation capabilities, Groq API (Llama 3.3 70B) for AI-powered query refinement, and SerpApi (Google Images) for executing image searches.
 
 ## Quick Start
 
@@ -139,7 +133,7 @@ User types keywords
 
 ## License
 
-This project is licensed under the MIT License.
+This project is licensed under the GNU General Public License.
 
 ---
 
