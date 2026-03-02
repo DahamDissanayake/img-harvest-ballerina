@@ -139,4 +139,8 @@ User types keywords
 
 ## License
 
-MIT
+This project is licensed under the MIT License.
+
+---
+
+Created by Daham Dissanayake
