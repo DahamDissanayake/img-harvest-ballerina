@@ -1,19 +1,21 @@
-# 🌾 ImgHarvest
+# ImgHarvest
+
+_Note: This will soon be available deployed on Choreo - WSO2._
 
 **AI-Powered Image Dataset Builder** — Search the web for images, refine your queries with AI, review results in a gallery, and download ZIP-packaged datasets with real-time progress tracking.
 
 ---
 
-## ✨ Features
+## Features
 
-- 🔍 **Smart Search** — Powered by SerpApi Google Images engine
-- 🤖 **AI Query Refinement** — "Refine with AI" button uses Groq (Llama 3.3 70B) to turn messy keywords into precise, laser-focused search queries
-- 🖼️ **Review Gallery** — Browse results in a responsive grid, select/deselect individual images with checkboxes
-- 📊 **Real-Time Progress** — Indeterminate progress bar during search, per-image determinate progress during download
-- 📦 **Client-Side ZIP** — Images downloaded in parallel (5 at a time) via CORS proxy, zipped client-side with JSZip
-- 👤 **Session Context** — Email-tagged sessions persisted in localStorage
+- **Smart Search** — Powered by SerpApi Google Images engine
+- **AI Query Refinement** — "Refine with AI" button uses Groq (Llama 3.3 70B) to turn messy keywords into precise, laser-focused search queries
+- **Review Gallery** — Browse results in a responsive grid, select/deselect individual images with checkboxes
+- **Real-Time Progress** — Indeterminate progress bar during search, per-image determinate progress during download
+- **Client-Side ZIP** — Images downloaded in parallel (5 at a time) via CORS proxy, zipped client-side with JSZip
+- **Session Context** — Email-tagged sessions persisted in localStorage
 
-## 🏗️ Tech Stack
+## Tech Stack
 
 | Layer             | Technology                                                 |
 | ----------------- | ---------------------------------------------------------- |
@@ -23,7 +25,7 @@
 | **Image Source**  | SerpApi (Google Images)                                    |
 | **Ports**         | Frontend → `localhost:3000` · Backend → `localhost:9090`   |
 
-## 🚀 Quick Start
+## Quick Start
 
 ### Prerequisites
 
@@ -67,7 +69,7 @@ npm run dev
 
 App opens at `http://localhost:3000`
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 img-harvest/
@@ -99,7 +101,7 @@ img-harvest/
     └── .env.local               ← BACKEND_URL config
 ```
 
-## 🔑 Environment Variables
+## Environment Variables
 
 | Variable      | File                                | Description                                                             |
 | ------------- | ----------------------------------- | ----------------------------------------------------------------------- |
@@ -107,7 +109,7 @@ img-harvest/
 | `groqApiKey`  | `backend/image_service/Config.toml` | Groq API key ([console.groq.com](https://console.groq.com/keys)) — free |
 | `BACKEND_URL` | `frontend/.env.local`               | Backend URL (default: `http://localhost:9090`)                          |
 
-## 🔄 How It Works
+## How It Works
 
 ```
 User types keywords
@@ -135,6 +137,6 @@ User types keywords
                       └──────────────────┘
 ```
 
-## 📄 License
+## License
 
 MIT
