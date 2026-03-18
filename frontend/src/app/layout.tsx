@@ -5,9 +5,17 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 
 export const metadata: Metadata = {
-    title: "ImgHarvest — Image Scraper & ML Data Prep",
+    title: "ImgHarvest - Image Scraper & ML Data Prep",
     description:
         "Search, review, and download ML-ready image datasets. Convert to PNG, JPG, or WebP and download as ZIP.",
+    icons: {
+        icon: [
+            {
+                url: "/icon.svg",
+                type: "image/svg+xml",
+            },
+        ],
+    },
 };
 
 export default function RootLayout({

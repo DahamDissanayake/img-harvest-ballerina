@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#e3c586" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <style>
+    @keyframes bounce {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-1.5px); }
+    }
+    .layer-1 { animation: bounce 3s infinite ease-in-out; }
+    .layer-2 { animation: bounce 3s infinite ease-in-out 0.5s; }
+    .layer-3 { animation: bounce 3s infinite ease-in-out 1s; }
+  </style>
+  <path class="layer-1" d="M12 2 2 7l10 5 10-5-10-5Z"/>
+  <path class="layer-2" d="m2 12 10 5 10-5"/>
+  <path class="layer-3" d="m2 17 10 5 10-5"/>
+</svg>
